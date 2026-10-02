@@ -541,6 +541,42 @@
             startTimer(15);
             loadBlogPosts();
         };
+        // 1. Fungsi mengambil data Headline Utama dari Admin CMS
+async function loadHeroData() {
+  try {
+    // Ambil file JSON yang disimpan Decap CMS
+    const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/content/hero.json`);
+    if (!response.ok) return;
+    const data = await response.json();
+
+    // Otomatis ganti Teks Headline (H1)
+    if (data.title) {
+      const h1El = document.querySelector('h1');
+      if (h1El) h1El.innerText = data.title;
+    }
+
+    // Otomatis ganti Subheadline / Deskripsi
+    if (data.subtitle) {
+      const subEl = document.querySelector('h1 + p') || document.querySelector('p');
+      if (subEl) subEl.innerText = data.subtitle;
+    }
+
+    // Otomatis ganti Foto Produk Utama
+    if (data.hero_image) {
+      const imgEl = document.querySelector('img[alt="Produk Unggulan"]');
+      if (imgEl) imgEl.src = data.hero_image;
+    }
+  } catch (err) {
+    console.log("Menggunakan headline bawaan HTML.");
+  }
+}
+
+// 2. Jalankan saat halaman landing page selesai di-load
+window.addEventListener('DOMContentLoaded', () => {
+  loadHeroData();  // Ambil headline dinamis
+  loadBlogPosts(); // Ambil artikel blog
+  startTimer(15);  // Jalankan timer promo
+});
     </script>
     <script>
   if (window.netlifyIdentity) {
