@@ -1,19 +1,34 @@
 backend:
   name: git-gateway
-  branch: main # Atau 'master', sesuaikan dengan branch utama di GitHub kamu
+  branch: main
 
-media_folder: "images/uploads" # Folder tempat menyimpan gambar yang di-upload
+media_folder: "images/uploads"
 public_folder: "/images/uploads"
 
 collections:
+  # MENU 1: BUAT KELOLA HEADLINE UTAMA LANDING PAGE
+  - name: "headline"
+    label: "Headline / Penawaran Utama"
+    files:
+      - file: "content/hero.json"
+        label: "Edit Headline Utama"
+        name: "hero"
+        fields:
+          - { label: "Judul Headline Utama", name: "title", widget: "string", default: "Solusi Praktis Untuk Tampil Lebih Percaya Diri Setiap Hari!" }
+          - { label: "Subheadline / Deskripsi", name: "subtitle", widget: "text" }
+          - { label: "Harga Coret (Lama)", name: "old_price", widget: "string", default: "Rp 399.000" }
+          - { label: "Harga Promo (Baru)", name: "promo_price", widget: "string", default: "Rp 199.000" }
+          - { label: "Gambar Produk Utama", name: "hero_image", widget: "image" }
+
+  # MENU 2: BUAT BLOG / ARTIKEL (YANG UDAH BISA TADI)
   - name: "blog"
     label: "Blog Posts"
-    folder: "posts" # File postingan bakal disimpan di folder /posts
+    folder: "posts"
     create: true
     slug: "{{slug}}"
     fields:
       - { label: "Judul Postingan", name: "title", widget: "string" }
       - { label: "Tanggal Publish", name: "date", widget: "datetime" }
       - { label: "Gambar Utama / Header", name: "thumbnail", widget: "image", required: false }
-      - { label: "Ringkasan Singkat (Deskripsi)", name: "description", widget: "text", required: false }
+      - { label: "Ringkasan Singkat", name: "description", widget: "text", required: false }
       - { label: "Isi Postingan", name: "body", widget: "markdown" }
