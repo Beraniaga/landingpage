@@ -16,6 +16,13 @@
         .pulse-slow { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.95; transform: scale(1.02); } }
         .brand-gradient { background: linear-gradient(90deg, #ef4444 0%, #f97316 100%); }
+        
+        /* Sembunyikan badge/widget Netlify Drawer yang mengganggu */
+        #netlify-overlay, 
+        [data-netlify-deploy-id], 
+        iframe[src*="netlify"] {
+            display: none !important;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 antialiased selection:bg-red-500 selection:text-white pb-20 md:pb-0">
@@ -38,8 +45,8 @@
         </div>
     </header>
 
-    <!-- Hero Section (Above the Fold) -->
-    <section class="relative bg-white pt-6 pb-12 overflow-hidden">
+    <!-- Hero Section (Above the Fold) - Tambah opacity-0 biar ga ada FOUC / kedipan -->
+    <section id="hero-section" class="relative bg-white pt-6 pb-12 overflow-hidden opacity-0 transition-opacity duration-300">
         <div class="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             
             <!-- Left Text Content -->
@@ -289,7 +296,7 @@
                         <span class="text-gray-400 line-through text-lg font-semibold">Rp 399.000</span>
                         <span class="text-3xl sm:text-4xl font-extrabold text-red-600">Rp 199.000</span>
                     </div>
-                    <p class="text-xs text-green-600 font-bold mt-1">Hemat Rp 200.000 + Gratis Ongkir Seluruh Indonesia</p>
+                    <p class="text-xs text-green-600 font-bold mt-1">Gratis Ongkir Seluruh Indonesia</p>
                 </div>
 
                 <!-- Checkout Form -->
@@ -536,58 +543,79 @@
             document.getElementById('articleModal').classList.add('hidden');
         }
 
-        // Initialize on load
-        window.onload = function() {
-            startTimer(15);
-            loadBlogPosts();
-        };
-        // 1. Fungsi mengambil data Headline Utama dari Admin CMS
-async function loadHeroData() {
-  try {
-    // Ambil file JSON yang disimpan Decap CMS
-    const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/content/hero.json`);
-    if (!response.ok) return;
-    const data = await response.json();
+        // Fungsi mengambil data Headline Utama & Harga dari Admin CMS (DENGAN BEBAS FOUC)
+        async function loadHeroData() {
+            const heroSection = document.getElementById('hero-section');
+            try {
+                // Ambil file JSON hasil simpanan Decap CMS
+                const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/content/hero.json`);
+                if (response.ok) {
+                    const data = await response.json();
 
-    // Otomatis ganti Teks Headline (H1)
-    if (data.title) {
-      const h1El = document.querySelector('h1');
-      if (h1El) h1El.innerText = data.title;
-    }
+                    // 1. Ganti Teks Headline (H1)
+                    if (data.title) {
+                        const h1El = document.querySelector('h1');
+                        if (h1El) h1El.innerText = data.title;
+                    }
 
-    // Otomatis ganti Subheadline / Deskripsi
-    if (data.subtitle) {
-      const subEl = document.querySelector('h1 + p') || document.querySelector('p');
-      if (subEl) subEl.innerText = data.subtitle;
-    }
+                    // 2. Ganti Subheadline / Deskripsi
+                    if (data.subtitle) {
+                        const subEl = document.querySelector('h1 + p') || document.querySelector('p');
+                        if (subEl) subEl.innerText = data.subtitle;
+                    }
 
-    // Otomatis ganti Foto Produk Utama
-    if (data.hero_image) {
-      const imgEl = document.querySelector('img[alt="Produk Unggulan"]');
-      if (imgEl) imgEl.src = data.hero_image;
-    }
-  } catch (err) {
-    console.log("Menggunakan headline bawaan HTML.");
-  }
-}
+                    // 3. Ganti Foto Produk Utama
+                    if (data.hero_image) {
+                        const imgEl = document.querySelector('img[alt="Produk Unggulan"]');
+                        if (imgEl) imgEl.src = data.hero_image;
+                    }
 
-// 2. Jalankan saat halaman landing page selesai di-load
-window.addEventListener('DOMContentLoaded', () => {
-  loadHeroData();  // Ambil headline dinamis
-  loadBlogPosts(); // Ambil artikel blog
-  startTimer(15);  // Jalankan timer promo
-});
-    </script>
-    <script>
-  if (window.netlifyIdentity) {
-    window.netlifyIdentity.on("init", user => {
-      if (!user) {
-        window.netlifyIdentity.on("login", () => {
-          document.location.href = "/admin/";
+                    // 4. Ganti Harga Coret (Harga Lama) di SELURUH bagian web
+                    if (data.old_price) {
+                        document.querySelectorAll('.line-through').forEach(el => {
+                            el.innerText = data.old_price;
+                        });
+                    }
+
+                    // 5. Ganti Harga Promo (Harga Baru) di SELURUH bagian web
+                    if (data.promo_price) {
+                        document.querySelectorAll('.text-red-600').forEach(el => {
+                            if (el.innerText.includes('Rp')) {
+                                el.innerText = data.promo_price;
+                            }
+                        });
+                    }
+                }
+            } catch (err) {
+                console.log("Menggunakan headline bawaan HTML.");
+            } finally {
+                // Tampilkan section hero secara mulus setelah data selesai diproses (Anti FOUC)
+                if (heroSection) {
+                    heroSection.classList.remove('opacity-0');
+                    heroSection.classList.add('opacity-100');
+                }
+            }
+        }
+
+        // Jalankan saat DOM siap
+        window.addEventListener('DOMContentLoaded', () => {
+            loadHeroData();  // Load data headline & harga terbaru
+            loadBlogPosts(); // Load daftar artikel
+            startTimer(15);  // Timer promo 15 menit
         });
-      }
-    });
-  }
-</script>
+    </script>
+
+    <!-- Netlify Identity Widget Init -->
+    <script>
+        if (window.netlifyIdentity) {
+            window.netlifyIdentity.on("init", user => {
+                if (!user) {
+                    window.netlifyIdentity.on("login", () => {
+                        document.location.href = "/admin/";
+                    });
+                }
+            });
+        }
+    </script>
 </body>
 </html>
